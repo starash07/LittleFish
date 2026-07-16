@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>LittleFish</AssemblyName>
+    <RootNamespace>LittleFish.App</RootNamespace>
+    <Product>LittleFish</Product>
+    <AssemblyTitle>LittleFish</AssemblyTitle>
+    <Version>1.5.2</Version>
+    <ApplicationIcon>assets\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.7" />
+  </ItemGroup>
+
+</Project>

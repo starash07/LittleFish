@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+settings.json
+dist/installer/
+src/LittleFish.Installer/Assets/payload.zip
+src/LittleFish.Installer/Assets/payload.sha256
+dist/

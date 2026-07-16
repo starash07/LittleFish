@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>LittleFish_Uninstall</AssemblyName>
+    <RootNamespace>LittleFish.Uninstaller</RootNamespace>
+    <Product>LittleFish Uninstaller</Product>
+    <AssemblyTitle>LittleFish Uninstaller</AssemblyTitle>
+    <ApplicationIcon>..\LittleFish.App\assets\app.ico</ApplicationIcon>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+    <DebugType>None</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+</Project>

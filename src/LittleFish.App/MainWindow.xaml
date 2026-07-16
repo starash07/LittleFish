@@ -1,0 +1,791 @@
+<Window x:Class="LittleFish.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="LittleFish"
+        Width="960"
+        Height="522"
+        MinWidth="140"
+        MinHeight="90"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="NoResize"
+        Background="Transparent"
+        Topmost="False"
+        AllowDrop="True"
+        PreviewDragOver="Window_DragOver"
+        PreviewDrop="Window_Drop"
+        DragOver="Window_DragOver"
+        Drop="Window_Drop"
+        MouseEnter="Window_MouseEnter"
+        MouseLeave="Window_MouseLeave"
+        MouseMove="Window_MouseMove"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown"
+        MouseLeftButtonUp="Window_MouseLeftButtonUp"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewMouseWheel="Window_PreviewMouseWheel">
+    <Grid Background="Transparent">
+        <Grid.Resources>
+            <DropShadowEffect x:Key="SoftShadow" BlurRadius="18" ShadowDepth="0" Opacity="0.10" Color="#98A2B3" />
+            <Style x:Key="ToolbarButton" TargetType="Button">
+                <Setter Property="Height" Value="30" />
+                <Setter Property="MinWidth" Value="52" />
+                <Setter Property="Padding" Value="12,0" />
+                <Setter Property="Margin" Value="0,0,6,0" />
+                <Setter Property="Background" Value="#FDFEFF" />
+                <Setter Property="BorderBrush" Value="#ECEFF3" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Foreground" Value="#172033" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Chrome"
+                                    CornerRadius="10"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center"
+                                                  Margin="{TemplateBinding Padding}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#F7F8FA" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="#E5E7EB" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#EEF1F5" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="#D5D9E1" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="WindowButton" TargetType="Button" BasedOn="{StaticResource ToolbarButton}">
+                <Setter Property="MinWidth" Value="34" />
+                <Setter Property="Width" Value="34" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="0,0,4,0" />
+                <Setter Property="Background" Value="#F8FBFD" />
+            </Style>
+            <Style x:Key="HelpButton" TargetType="Button" BasedOn="{StaticResource WindowButton}">
+                <Setter Property="Margin" Value="0,0,8,0" />
+            </Style>
+            <Style x:Key="TopBarGroup" TargetType="Border">
+                <Setter Property="Height" Value="32" />
+                <Setter Property="CornerRadius" Value="16" />
+                <Setter Property="Background" Value="#FFFFFF" />
+                <Setter Property="BorderBrush" Value="#EDF1F5" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="3" />
+                <Setter Property="Margin" Value="0,0,8,0" />
+            </Style>
+            <Style x:Key="TopBarButton" TargetType="Button">
+                <Setter Property="Height" Value="24" />
+                <Setter Property="MinWidth" Value="50" />
+                <Setter Property="Padding" Value="7,0" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Foreground" Value="#9CA3AF" />
+                <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Chrome"
+                                    CornerRadius="9"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  Margin="{TemplateBinding Padding}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="Transparent" />
+                                    <Setter Property="Foreground" Value="#5AB7F5" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="Transparent" />
+                                    <Setter Property="Foreground" Value="#2EA8FF" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="TopBarPrimaryButton" TargetType="Button" BasedOn="{StaticResource TopBarButton}">
+                <Setter Property="MinWidth" Value="34" />
+                <Setter Property="Background" Value="#FFFFFF" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Foreground" Value="#2F343B" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+            <Style x:Key="TopWindowButton" TargetType="Button" BasedOn="{StaticResource TopBarButton}">
+                <Setter Property="MinWidth" Value="28" />
+                <Setter Property="Width" Value="28" />
+                <Setter Property="Height" Value="24" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="#9CA3AF" />
+                <Setter Property="FontFamily" Value="Segoe UI Symbol" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+            <Style x:Key="NavIconPath" TargetType="Path">
+                <Setter Property="Width" Value="13" />
+                <Setter Property="Height" Value="13" />
+                <Setter Property="Stretch" Value="Uniform" />
+                <Setter Property="Stroke" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                <Setter Property="StrokeThickness" Value="1.65" />
+                <Setter Property="StrokeStartLineCap" Value="Round" />
+                <Setter Property="StrokeEndLineCap" Value="Round" />
+                <Setter Property="StrokeLineJoin" Value="Round" />
+                <Setter Property="Fill" Value="Transparent" />
+                <Setter Property="Margin" Value="0,0,4,0" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+            <Style x:Key="NavIconFillPath" TargetType="Path">
+                <Setter Property="Width" Value="12" />
+                <Setter Property="Height" Value="12" />
+                <Setter Property="Stretch" Value="Uniform" />
+                <Setter Property="Fill" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                <Setter Property="Margin" Value="0,0,4,0" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+            <Style x:Key="WindowIconPath" TargetType="Path" BasedOn="{StaticResource NavIconPath}">
+                <Setter Property="Width" Value="10" />
+                <Setter Property="Height" Value="10" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="StrokeThickness" Value="1.6" />
+            </Style>
+            <Style x:Key="StatusText" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="#6B7280" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Margin" Value="8,0" />
+            </Style>
+            <Style x:Key="StatusDivider" TargetType="Border">
+                <Setter Property="Width" Value="1" />
+                <Setter Property="Height" Value="13" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Background" Value="#E2E8F0" />
+            </Style>
+            <Style x:Key="StatusPill" TargetType="Border">
+                <Setter Property="Height" Value="32" />
+                <Setter Property="MinWidth" Value="380" />
+                <Setter Property="CornerRadius" Value="16" />
+                <Setter Property="Background" Value="#F7FCFF" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="8,0" />
+                <Setter Property="Margin" Value="0,0,8,0" />
+            </Style>
+            <Style x:Key="MenuItemButton" TargetType="Button">
+                <Setter Property="Height" Value="34" />
+                <Setter Property="Padding" Value="12,0" />
+                <Setter Property="Margin" Value="0,0,0,4" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Foreground" Value="#24364B" />
+                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Chrome"
+                                    CornerRadius="9"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center"
+                                                  Margin="{TemplateBinding Padding}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#F5F6F8" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="Transparent" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#ECEFF3" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="#98A2B3" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="ProgressSliderThumb" TargetType="Thumb">
+                <Setter Property="Width" Value="18" />
+                <Setter Property="Height" Value="18" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Thumb">
+                            <Border x:Name="ThumbChrome"
+                                    CornerRadius="9"
+                                    Background="#FFFFFF"
+                                    BorderBrush="#74C8FF"
+                                    BorderThickness="2">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="0" Opacity="0.18" Color="#74C8FF" />
+                                </Border.Effect>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="ThumbChrome" Property="Background" Value="#F7FCFF" />
+                                    <Setter TargetName="ThumbChrome" Property="BorderBrush" Value="#4DB7FF" />
+                                </Trigger>
+                                <Trigger Property="IsDragging" Value="True">
+                                    <Setter TargetName="ThumbChrome" Property="Background" Value="#EAF7FF" />
+                                    <Setter TargetName="ThumbChrome" Property="BorderBrush" Value="#2EA8FF" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="ProgressSliderDecreaseButton" TargetType="RepeatButton">
+                <Setter Property="Focusable" Value="False" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RepeatButton">
+                            <Border Height="8"
+                                    CornerRadius="4"
+                                    Background="#9DDBFF" />
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="ProgressSliderIncreaseButton" TargetType="RepeatButton">
+                <Setter Property="Focusable" Value="False" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RepeatButton">
+                            <Border Height="8"
+                                    CornerRadius="4"
+                                    Background="#FFFFFF"
+                                    BorderBrush="#ECEFF3"
+                                    BorderThickness="1" />
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="ProgressSliderStyle" TargetType="Slider">
+                <Setter Property="Height" Value="24" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Slider">
+                            <Grid VerticalAlignment="Center">
+                                <Track x:Name="PART_Track">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Style="{StaticResource ProgressSliderDecreaseButton}" Command="Slider.DecreaseLarge" />
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Style="{StaticResource ProgressSliderIncreaseButton}" Command="Slider.IncreaseLarge" />
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb Style="{StaticResource ProgressSliderThumb}" />
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="PopupActionButton" TargetType="Button">
+                <Setter Property="Height" Value="32" />
+                <Setter Property="MinWidth" Value="118" />
+                <Setter Property="Padding" Value="12,0" />
+                <Setter Property="Background" Value="#FDFEFF" />
+                <Setter Property="BorderBrush" Value="#ECEFF3" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Foreground" Value="#172033" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Chrome"
+                                    CornerRadius="10"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  Margin="{TemplateBinding Padding}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#F7F8FA" />
+                                    <Setter TargetName="Chrome" Property="BorderBrush" Value="#E5E7EB" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#EEF1F5" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="PopupScrollBar" TargetType="ScrollBar">
+                <Setter Property="Width" Value="10" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid Background="Transparent">
+                                <Track x:Name="PART_Track"
+                                       IsDirectionReversed="True"
+                                       Focusable="False">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" />
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" />
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb MinHeight="34" Background="#9DDBFF">
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="Thumb">
+                                                    <Border x:Name="ThumbChrome"
+                                                            Width="6"
+                                                            HorizontalAlignment="Center"
+                                                            CornerRadius="3"
+                                                            Background="{TemplateBinding Background}" />
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="ThumbChrome" Property="Background" Value="#74C8FF" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsDragging" Value="True">
+                                                            <Setter TargetName="ThumbChrome" Property="Background" Value="#2EA8FF" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="PopupListBoxItem" TargetType="ListBoxItem">
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="Margin" Value="0,0,4,5" />
+                <Setter Property="Foreground" Value="#344054" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="Chrome"
+                                    CornerRadius="9"
+                                    Background="Transparent"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#F2FAFF" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Chrome" Property="Background" Value="#EAF7FF" />
+                                    <Setter Property="Foreground" Value="#1570EF" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="PopupListBox" TargetType="ListBox">
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+                <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+                <Setter Property="ItemContainerStyle" Value="{StaticResource PopupListBoxItem}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBox">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ScrollViewer Focusable="False">
+                                    <ScrollViewer.Resources>
+                                        <Style TargetType="ScrollBar" BasedOn="{StaticResource PopupScrollBar}" />
+                                    </ScrollViewer.Resources>
+                                    <ItemsPresenter />
+                                </ScrollViewer>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </Grid.Resources>
+
+        <Border x:Name="ReaderBackground" CornerRadius="12" Background="#FFFFFFFF" />
+
+        <Border x:Name="WindowFrame"
+                Margin="0"
+                CornerRadius="12"
+                Background="Transparent"
+                BorderBrush="#9FD8FF"
+                BorderThickness="1"
+                Effect="{x:Null}">
+            <Grid ClipToBounds="True">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border x:Name="Toolbar"
+                        Grid.Row="0"
+                        CornerRadius="12,12,0,0"
+                        Background="#FFFFFF"
+                        BorderThickness="0"
+                        MouseLeftButtonDown="Toolbar_MouseLeftButtonDown">
+                    <DockPanel LastChildFill="True" Margin="10,6">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Style="{StaticResource TopBarGroup}" Margin="0">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource TopWindowButton}" ToolTip="最小化" Click="Minimize_Click">
+                                        <Path Style="{StaticResource WindowIconPath}" Data="M1,6 H9" />
+                                    </Button>
+                                    <Button x:Name="MaximizeButton" Style="{StaticResource TopWindowButton}" ToolTip="最大化" Click="Maximize_Click">
+                                        <Path Style="{StaticResource WindowIconPath}" Data="M2,2 H8 V8 H2 Z" />
+                                    </Button>
+                                    <Button Style="{StaticResource TopWindowButton}" ToolTip="关闭" Click="Close_Click">
+                                        <Path Style="{StaticResource WindowIconPath}" Data="M2,2 L8,8 M8,2 L2,8" />
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                            <Border Style="{StaticResource TopBarGroup}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button x:Name="MenuButton" Style="{StaticResource TopBarButton}" ToolTip="菜单" Click="Menu_Click">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Path Style="{StaticResource NavIconPath}" Data="M1,2 H12 M1,6.5 H12 M1,11 H12" />
+                                            <TextBlock Text="菜单" FontSize="11" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource TopBarButton}" ToolTip="章节" Click="Chapters_Click">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Path Style="{StaticResource NavIconPath}" Data="M2,2 H6.2 A1.8,1.8 0 0 1 8,3.8 V12 A1.8,1.8 0 0 0 6.2,10.2 H2 Z M8,3.8 A1.8,1.8 0 0 1 9.8,2 H12 V10.2 H9.8 A1.8,1.8 0 0 0 8,12 Z M4,4.2 H6 M4,6.2 H6" />
+                                            <TextBlock Text="章节" FontSize="11" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource TopBarButton}" ToolTip="书签" Click="Bookmarks_Click">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Path Style="{StaticResource NavIconPath}" Data="M3,1.5 H10 A1,1 0 0 1 11,2.5 V12 L6.5,9.3 L2,12 V2.5 A1,1 0 0 1 3,1.5 Z" />
+                                            <TextBlock Text="书签" FontSize="11" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="AutoPageButton" Style="{StaticResource TopBarButton}" ToolTip="自动翻页" Click="AutoPage_Click">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Path x:Name="AutoPageIcon" Style="{StaticResource NavIconFillPath}" Data="M2,1 L11,6 L2,11 Z" />
+                                            <TextBlock x:Name="AutoPageLabel" Text="自动" FontSize="11" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="HelpButton" Style="{StaticResource TopBarButton}" ToolTip="帮助" Margin="4,0,0,0" Click="Help_Click">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Path Style="{StaticResource NavIconPath}" Data="M6.5,12 A5.5,5.5 0 1 0 6.5,1 A5.5,5.5 0 0 0 6.5,12 M5.1,4.7 A1.5,1.5 0 0 1 6.6,3.5 A1.45,1.45 0 0 1 8.1,4.9 C8.1,6.6 6.4,6.3 6.4,7.8 M6.45,9.8 H6.55" />
+                                            <TextBlock Text="帮助" FontSize="11" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatusPill}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock x:Name="FileStatusText" Style="{StaticResource StatusText}" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                                    <Border Style="{StaticResource StatusDivider}" />
+                                    <TextBlock x:Name="ProgressStatusText" Style="{StaticResource StatusText}" />
+                                    <Border Style="{StaticResource StatusDivider}" />
+                                    <TextBlock x:Name="AutoStatusText" Style="{StaticResource StatusText}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <Border IsHitTestVisible="False" />
+                    </DockPanel>
+                </Border>
+
+                <TextBox x:Name="ReaderText"
+                         Grid.Row="1"
+                         HorizontalAlignment="Stretch"
+                         VerticalAlignment="Stretch"
+                         IsReadOnly="True"
+                         AcceptsReturn="True"
+                         AcceptsTab="False"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Hidden"
+                         HorizontalScrollBarVisibility="Disabled"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         Foreground="#111111"
+                         FontFamily="Microsoft YaHei UI"
+                         FontSize="16"
+                         Padding="20"
+                         SelectionBrush="#B9D7FF"
+                         PreviewKeyDown="ReaderText_PreviewKeyDown"
+                         PreviewMouseLeftButtonDown="ReaderText_PreviewMouseLeftButtonDown" />
+
+                <TextBlock x:Name="ResizeHint"
+                           Grid.Row="1"
+                           Panel.ZIndex="20"
+                           Text="拖动调整窗口大小..."
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="#667085"
+                           Background="#CCFFFFFF"
+                           Padding="14,8"
+                           Visibility="Collapsed" />
+            </Grid>
+        </Border>
+
+        <Popup x:Name="MenuPopup"
+               PlacementTarget="{Binding ElementName=MenuButton}"
+               Placement="Bottom"
+               StaysOpen="False"
+               AllowsTransparency="True">
+            <Border Width="218" Margin="8" Padding="8" CornerRadius="12" Background="#FFFFFF" BorderBrush="#ECEFF3" BorderThickness="1" Effect="{StaticResource SoftShadow}">
+                <StackPanel>
+                    <TextBlock Text="菜单"
+                               IsHitTestVisible="False"
+                               Foreground="#98A2B3"
+                               FontSize="12"
+                               Margin="8,2,8,8" />
+                    <Button Style="{StaticResource MenuItemButton}" Content="打开 TXT" Click="MenuOpen_Click" />
+                    <Button x:Name="LastFileButton" Style="{StaticResource MenuItemButton}" Content="打开上次文件" Click="MenuLastFile_Click" />
+                    <Button Style="{StaticResource MenuItemButton}" Content="查找" Click="MenuFind_Click" />
+                    <Button Style="{StaticResource MenuItemButton}" Content="进度跳转" Click="MenuProgress_Click" />
+                    <Button Style="{StaticResource MenuItemButton}" Content="设置" Margin="0" Click="MenuSettings_Click" />
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <Popup x:Name="SearchPopup"
+               PlacementTarget="{Binding ElementName=Toolbar}"
+               Placement="Bottom"
+               StaysOpen="False"
+               AllowsTransparency="True">
+            <Border Width="340" Margin="8" Padding="12" CornerRadius="12" Background="#FFFFFF" BorderBrush="#ECEFF3" BorderThickness="1" Effect="{StaticResource SoftShadow}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="下一个" Width="72" Margin="8,0,0,0" Click="FindNext_Click" />
+                    <TextBox x:Name="SearchBox" Height="30" VerticalContentAlignment="Center" KeyDown="SearchBox_KeyDown" />
+                </DockPanel>
+            </Border>
+        </Popup>
+
+        <Popup x:Name="ProgressPopup"
+               PlacementTarget="{Binding ElementName=Toolbar}"
+               Placement="Bottom"
+               StaysOpen="False"
+               AllowsTransparency="True">
+            <Border Width="340" Margin="8" Padding="12" CornerRadius="12" Background="#FFFFFF" BorderBrush="#ECEFF3" BorderThickness="1" Effect="{StaticResource SoftShadow}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="跳转到进度" FontWeight="SemiBold" Foreground="#344054" Margin="0,0,0,10" />
+                    <Slider x:Name="ProgressSlider"
+                            Grid.Row="1"
+                            Style="{StaticResource ProgressSliderStyle}"
+                            Minimum="0"
+                            Maximum="100"
+                            TickFrequency="1"
+                            Margin="0,0,0,10"
+                            ValueChanged="ProgressSlider_ValueChanged" />
+                    <DockPanel Grid.Row="2">
+                        <Button DockPanel.Dock="Right" Content="跳转" Width="68" Margin="10,0,0,0" Click="ProgressJump_Click" />
+                        <TextBlock DockPanel.Dock="Right" Text="%" VerticalAlignment="Center" Foreground="#667085" Margin="6,0,0,0" />
+                        <TextBox x:Name="ProgressBox"
+                                 Height="30"
+                                 VerticalContentAlignment="Center"
+                                 TextChanged="ProgressBox_TextChanged"
+                                 KeyDown="ProgressBox_KeyDown" />
+                    </DockPanel>
+                </Grid>
+            </Border>
+        </Popup>
+
+        <Popup x:Name="BookmarkPopup"
+               PlacementTarget="{Binding ElementName=Toolbar}"
+               Placement="Bottom"
+               StaysOpen="False"
+               AllowsTransparency="True">
+            <Border Width="330"
+                    Height="350"
+                    Margin="8"
+                    Padding="14"
+                    CornerRadius="12"
+                    Background="#FFFFFF"
+                    BorderBrush="#ECEFF3"
+                    BorderThickness="1"
+                    Effect="{StaticResource SoftShadow}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock DockPanel.Dock="Top"
+                               Grid.Row="0"
+                               Text="书签"
+                               IsHitTestVisible="False"
+                               FontSize="12"
+                               Foreground="#98A2B3"
+                               Margin="2,0,0,10" />
+                    <Border Grid.Row="1"
+                            CornerRadius="10"
+                            Background="#F7F8FA"
+                            BorderBrush="#ECEFF3"
+                            BorderThickness="1"
+                            Padding="10"
+                            Margin="0,0,0,12">
+                        <ListBox x:Name="BookmarkList"
+                                 Style="{StaticResource PopupListBox}"
+                                 PreviewMouseWheel="BookmarkList_PreviewMouseWheel"
+                                 MouseDoubleClick="BookmarkList_MouseDoubleClick" />
+                    </Border>
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Style="{StaticResource PopupActionButton}"
+                                Content="添加当前书签"
+                                HorizontalAlignment="Stretch"
+                                Click="AddBookmark_Click" />
+                        <Button Grid.Column="2"
+                                Style="{StaticResource PopupActionButton}"
+                                Content="删除选中书签"
+                                HorizontalAlignment="Stretch"
+                                Click="DeleteBookmark_Click" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Popup>
+
+        <Popup x:Name="HelpPopup"
+               PlacementTarget="{Binding ElementName=HelpButton}"
+               Placement="Bottom"
+               StaysOpen="False"
+               AllowsTransparency="True">
+            <Border Width="430"
+                    Margin="8"
+                    Padding="16"
+                    CornerRadius="12"
+                    Background="#FFFFFF"
+                    BorderBrush="#ECEFF3"
+                    BorderThickness="1"
+                    Effect="{StaticResource SoftShadow}">
+                <StackPanel>
+                    <TextBlock Text="帮助"
+                               IsHitTestVisible="False"
+                               FontSize="12"
+                               Foreground="#98A2B3"
+                               Margin="0,0,0,10" />
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• " />
+                        <Run Text="F6" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text=" 开启或关闭自动翻页。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• " />
+                        <Run Text="F7" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text=" 隐藏功能栏；隐藏后，按住正文区域即可拖动窗口，按住窗口边缘即可调整窗口大小。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• " />
+                        <Run Text="Ctrl+T" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text=" 开启/关闭窗口置顶模式。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• " />
+                        <Run Text="F9" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text=" 开启鼠标移出隐藏 / 进入显示的功能。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 在 设置 &gt; 翻页 中可开启整页翻页，并调整自动翻页间隔时间。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 在 设置 &gt; 外观 中，可自定义文字颜色和背景颜色。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 按下 " />
+                        <Run Text="Ctrl + 加号" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text=" 或 " />
+                        <Run Text="Ctrl + 减号" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text=" 可调整文字大小。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 按住 " />
+                        <Run Text="Ctrl" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text=" 并滚动鼠标滚轮，可调整背景不透明度。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 按住 " />
+                        <Run Text="Alt" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text=" 并滚动鼠标滚轮，可调整整个窗口的不透明度。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 在 菜单 中可进行进度跳转。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 按下 " />
+                        <Run Text="Ctrl+Shift+Z" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text=" 可触发老板键 / 快捷隐藏，再按一次恢复显示。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 找不到窗口时可按下" />
+                        <Run Text="Ctrl+Shift+F12" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text="强制显示窗口。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 按下 " />
+                        <Run Text="Ctrl+W" Foreground="#1570EF" FontWeight="SemiBold" />
+                        <Run Text=" 关闭软件。" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 在 设置 &gt; 窗口 中可开启最小化到托盘。" />
+                    </TextBlock>
+
+                    <TextBlock LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
+                        <Run Text="• 所有快捷键可在设置中修改。" />
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </Popup>
+    </Grid>
+</Window>

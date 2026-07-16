@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>LittleFish_Setup</AssemblyName>
+    <RootNamespace>LittleFish.Installer</RootNamespace>
+    <Product>LittleFish Setup</Product>
+    <AssemblyTitle>LittleFish Setup</AssemblyTitle>
+    <Version>1.5.2</Version>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app.png" />
+    <Resource Include="Assets\sponsor.png" />
+    <Resource Include="Assets\payload.zip" Condition="Exists('Assets\payload.zip')" />
+    <Resource Include="Assets\payload.sha256" Condition="Exists('Assets\payload.sha256')" />
+  </ItemGroup>
+
+</Project>
