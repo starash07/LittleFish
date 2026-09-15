@@ -52,6 +52,7 @@ public partial class MainWindow : Window
     private readonly List<ChapterEntry> _chapters = [];
     private readonly List<BookmarkEntry> _bookmarks = [];
     private readonly DispatcherTimer _autoPageTimer = new();
+    private readonly ReaderPagination _pagination = new();
     private AppSettings _settings = new();
     private Forms.NotifyIcon? _trayIcon;
     private readonly bool _isSeaSHosted;
@@ -59,12 +60,17 @@ public partial class MainWindow : Window
     private CancellationTokenSource? _seaSHostCommandCancellation;
     private HwndSource? _hwndSource;
     private SettingsWindow? _settingsWindow;
+    private ChapterPickerWindow? _chapterWindow;
+    private string? _pendingFilePath;
+    private int _modalPauseCount;
+    private bool _isClosing;
     private string _filePath = "";
     private string _documentText = "";
     private int _readerOffset;
     private int _visibleEndOffset;
     private bool _isRenderingPage;
-    private int _lastFindOffset;
+    private int _lastFindOffset = -1;
+    private string _lastSearchTerm = "";
     private WpfPoint? _resizeStart;
     private WpfSize _resizeStartSize;
     private WpfPoint _resizeStartScreen;
@@ -75,7 +81,6 @@ public partial class MainWindow : Window
     private bool _isMoving;
     private bool _isUpdatingProgressControls;
     private bool _isHiddenByBossKey;
-    private bool _settingsWindowWasVisibleBeforeBossKey;
     private bool _isRestoringReadingPosition;
     private WpfPoint _moveStartScreen;
     private WpfPoint _moveStartWindow;
@@ -96,17 +101,11 @@ public partial class MainWindow : Window
         InitializeComponent();
         ReaderText.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler(ReaderText_ScrollChanged));
         _autoPageTimer.Tick += AutoPageTimer_Tick;
+        IsVisibleChanged += (_, _) => ConfigureAutoPageTimer();
+        SearchBox.TextChanged += (_, _) => ResetSearch();
         LoadSettings();
         ApplySettings();
         UpdateStatus();
-
-        var startupFilePath = GetStartupFilePath();
-        if (startupFilePath is not null)
-        {
-            Dispatcher.BeginInvoke(
-                () => OpenStartupFile(startupFilePath),
-                DispatcherPriority.Loaded);
-        }
 
         StartSeaSHostCommandServer();
     }
@@ -132,41 +131,70 @@ public partial class MainWindow : Window
         return null;
     }
 
-    private static string? GetStartupFilePath()
+    internal void HandleLaunchRequest(LaunchRequest request)
     {
-        foreach (var argument in Environment.GetCommandLineArgs().Skip(1))
+        if (_isClosing) return;
+        if (!IsVisible || _isHiddenByBossKey || WindowState == WindowState.Minimized)
+        {
+            ShowWindowFromBossKey();
+        }
+        else
+        {
+            Activate();
+            _settingsWindow?.Activate();
+            _chapterWindow?.Activate();
+        }
+        if (request.FilePath is not null)
+        {
+            _pendingFilePath = request.FilePath;
+            OpenPendingFile();
+        }
+    }
+
+    private void OpenPendingFile()
+    {
+        if (_pendingFilePath is null || _modalPauseCount > 0 || _settingsWindow is not null || _chapterWindow is not null || _isClosing)
+        {
+            return;
+        }
+        var path = _pendingFilePath;
+        _pendingFilePath = null;
+        TryOpenFile(path);
+    }
+
+    private void RunWithAutoPagePaused(Action action)
+    {
+        _modalPauseCount++;
+        ConfigureAutoPageTimer();
+        try
+        {
+            action();
+        }
+        finally
+        {
+            _modalPauseCount--;
+            OpenPendingFile();
+            ConfigureAutoPageTimer();
+        }
+    }
+
+    private void TryOpenFile(string path)
+    {
+        RunWithAutoPagePaused(() =>
         {
             try
             {
-                var path = Path.GetFullPath(argument.Trim('"'));
-                if (File.Exists(path))
-                {
-                    return path;
-                }
+                LoadTextFile(path);
             }
-            catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+            catch (TextFileOpenException exception)
             {
+                System.Windows.MessageBox.Show(this, exception.Message, "LittleFish", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-        }
-
-        return null;
-    }
-
-    private void OpenStartupFile(string path)
-    {
-        try
-        {
-            LoadTextFile(path);
-        }
-        catch (Exception exception)
-        {
-            System.Windows.MessageBox.Show(
-                this,
-                $"打开文件失败：{exception.Message}",
-                "LittleFish",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-        }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+            {
+                System.Windows.MessageBox.Show(this, "无法打开此文件。", "LittleFish", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        });
     }
 
     private void LoadSettings()
@@ -436,32 +464,31 @@ public partial class MainWindow : Window
             Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
         };
 
-        if (dialog.ShowDialog(this) == true)
+        RunWithAutoPagePaused(() =>
         {
-            LoadTextFile(dialog.FileName);
-        }
+            if (dialog.ShowDialog(this) == true)
+            {
+                TryOpenFile(dialog.FileName);
+            }
+        });
     }
 
     private void OpenLastFile()
     {
         if (string.IsNullOrWhiteSpace(_settings.LastFile))
         {
-            System.Windows.MessageBox.Show(this, "还没有上次打开的文件。", "打开上次文件", MessageBoxButton.OK, MessageBoxImage.Information);
+            RunWithAutoPagePaused(() => System.Windows.MessageBox.Show(this, "还没有阅读记录。", "LittleFish", MessageBoxButton.OK, MessageBoxImage.Information));
             return;
         }
 
-        if (!File.Exists(_settings.LastFile))
-        {
-            System.Windows.MessageBox.Show(this, "上次打开的文件不存在或已移动。", "打开上次文件", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        LoadTextFile(_settings.LastFile);
+        TryOpenFile(_settings.LastFile);
     }
 
     private void LoadTextFile(string path)
     {
-        var content = ReadTextFile(path);
+        path = Path.GetFullPath(path);
+        var content = TextFileReader.Read(path);
+        SaveCurrentReadingPosition();
         _filePath = path;
         _documentText = content;
         _isRestoringReadingPosition = true;
@@ -475,7 +502,7 @@ public partial class MainWindow : Window
 
         _readerOffset = charOffset;
         _visibleEndOffset = charOffset;
-        _lastFindOffset = charOffset;
+        ResetSearch();
         RenderCurrentPage(savePosition: false);
         ParseChapters(content);
         RefreshBookmarks();
@@ -485,6 +512,7 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(
             () => RestoreReadingPosition(path, charOffset),
             DispatcherPriority.Loaded);
+        ConfigureAutoPageTimer();
     }
 
     private void RestoreReadingPosition(string path, int charOffset)
@@ -509,30 +537,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private static string ReadTextFile(string path)
-    {
-        var bytes = File.ReadAllBytes(path);
-        foreach (var encoding in new[]
-        {
-            new UTF8Encoding(true, true),
-            new UTF8Encoding(false, true),
-            Encoding.GetEncoding("GB18030"),
-            Encoding.GetEncoding("Big5"),
-            Encoding.Default
-        })
-        {
-            try
-            {
-                return encoding.GetString(bytes);
-            }
-            catch (DecoderFallbackException)
-            {
-            }
-        }
-
-        return Encoding.UTF8.GetString(bytes);
-    }
-
     private void RenderCurrentPage(bool savePosition)
     {
         if (string.IsNullOrEmpty(_documentText))
@@ -544,7 +548,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        _readerOffset = Math.Clamp(_readerOffset, 0, _documentText.Length);
+        PreparePagination();
+        _readerOffset = _pagination.NormalizeOffset(_readerOffset);
         if (_readerOffset >= _documentText.Length)
         {
             _readerOffset = FindPreviousPageOffset(_documentText.Length);
@@ -585,133 +590,13 @@ public partial class MainWindow : Window
             return "";
         }
 
-        var length = FindPageLength(startOffset);
-        endOffset = Math.Clamp(startOffset + length, startOffset, _documentText.Length);
+        endOffset = _pagination.GetPageEnd(startOffset);
         return _documentText.Substring(startOffset, endOffset - startOffset);
     }
 
-    private int FindPageLength(int startOffset)
+    private void PreparePagination()
     {
-        var remaining = _documentText.Length - startOffset;
-        if (remaining <= 0)
-        {
-            return 0;
-        }
-
-        var probe = Math.Min(remaining, EstimatePageProbeLength());
-        while (probe < remaining && TextRangeFits(startOffset, probe))
-        {
-            var nextProbe = Math.Min(remaining, probe * 2);
-            if (nextProbe == probe)
-            {
-                break;
-            }
-            probe = nextProbe;
-        }
-
-        var low = 1;
-        var high = probe;
-        var best = 1;
-        while (low <= high)
-        {
-            var mid = low + (high - low) / 2;
-            if (TextRangeFits(startOffset, mid))
-            {
-                best = mid;
-                low = mid + 1;
-            }
-            else
-            {
-                high = mid - 1;
-            }
-        }
-
-        return Math.Clamp(best, 1, remaining);
-    }
-
-    private int EstimatePageProbeLength()
-    {
-        var size = GetReaderContentSize();
-        var lineHeight = GetReaderLineHeight();
-        var charWidth = Math.Max(1, ReaderText.FontSize * 0.55);
-        var lines = Math.Max(1, (int)Math.Ceiling(size.Height / lineHeight));
-        var charsPerLine = Math.Max(1, (int)Math.Ceiling(size.Width / charWidth));
-        return Math.Clamp((lines + 2) * charsPerLine * 4 + 500, 500, 50000);
-    }
-
-    private bool TextRangeFits(int startOffset, int length)
-    {
-        if (length <= 0)
-        {
-            return true;
-        }
-
-        var size = GetReaderContentSize();
-        if (size.Width <= 1 || size.Height <= 1)
-        {
-            return length <= 1;
-        }
-
-        var text = _documentText.Substring(startOffset, Math.Min(length, _documentText.Length - startOffset));
-        var formatted = CreateFormattedText(text, size.Width);
-        return formatted.Height <= size.Height + 0.5;
-    }
-
-    private bool TextRangeFitsSingleLine(int startOffset, int length)
-    {
-        if (length <= 0)
-        {
-            return true;
-        }
-
-        var count = Math.Min(length, _documentText.Length - startOffset);
-        var text = _documentText.Substring(startOffset, count);
-        if (text.Contains('\n') || text.Contains('\r'))
-        {
-            return false;
-        }
-
-        var size = GetReaderContentSize();
-        if (size.Width <= 1)
-        {
-            return count <= 1;
-        }
-
-        var formatted = CreateFormattedText(text, double.PositiveInfinity);
-        return formatted.WidthIncludingTrailingWhitespace <= size.Width + 0.5;
-    }
-
-    private FormattedText CreateFormattedText(string text, double maxTextWidth)
-    {
-        var typeface = new Typeface(
-            ReaderText.FontFamily,
-            ReaderText.FontStyle,
-            ReaderText.FontWeight,
-            ReaderText.FontStretch);
-        var dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
-        var formatted = new FormattedText(
-            string.IsNullOrEmpty(text) ? " " : text,
-            CultureInfo.CurrentUICulture,
-            System.Windows.FlowDirection.LeftToRight,
-            typeface,
-            ReaderText.FontSize,
-            System.Windows.Media.Brushes.Black,
-            dpi)
-        {
-            MaxTextWidth = double.IsInfinity(maxTextWidth) ? 100000 : Math.Max(1, maxTextWidth),
-            LineHeight = GetReaderLineHeight(),
-            TextAlignment = TextAlignment.Left
-        };
-        return formatted;
-    }
-
-    private WpfSize GetReaderContentSize()
-    {
-        var width = ReaderText.ActualWidth > 0 ? ReaderText.ActualWidth : ReaderText.RenderSize.Width;
-        var height = ReaderText.ActualHeight > 0 ? ReaderText.ActualHeight : ReaderText.RenderSize.Height;
-        width = Math.Max(1, width - ReaderText.Padding.Left - ReaderText.Padding.Right);
-        height = Math.Max(1, height - ReaderText.Padding.Top - ReaderText.Padding.Bottom);
-        return new WpfSize(width, height);
+        _pagination.Configure(ReaderText, _documentText);
     }
 
     private void SetReaderOffset(int offset, bool savePosition = true)
@@ -721,8 +606,10 @@ public partial class MainWindow : Window
             return;
         }
 
+        ResetSearch();
         _readerOffset = Math.Clamp(offset, 0, _documentText.Length);
         RenderCurrentPage(savePosition);
+        ConfigureAutoPageTimer();
     }
 
     private int GetNextLineOffset()
@@ -742,61 +629,19 @@ public partial class MainWindow : Window
             }
         }
 
-        return Math.Min(_documentText.Length, _readerOffset + 1);
+        return _visibleEndOffset;
     }
 
     private int FindPreviousLineOffset(int endOffset)
     {
-        endOffset = Math.Clamp(endOffset, 0, _documentText.Length);
-        if (endOffset <= 0)
-        {
-            return 0;
-        }
-
-        var minOffset = Math.Max(0, endOffset - 20000);
-        var low = minOffset;
-        var high = endOffset - 1;
-        var best = high;
-
-        while (low <= high)
-        {
-            var mid = low + (high - low) / 2;
-            if (TextRangeFitsSingleLine(mid, endOffset - mid))
-            {
-                best = mid;
-                high = mid - 1;
-            }
-            else
-            {
-                low = mid + 1;
-            }
-        }
-
-        return Math.Clamp(best, 0, endOffset - 1);
-    }
-
-    private int GetVisibleLineCount()
-    {
-        ReaderText.UpdateLayout();
-        if (ReaderText.LineCount > 0)
-        {
-            return Math.Max(1, ReaderText.LineCount);
-        }
-
-        var size = GetReaderContentSize();
-        return Math.Max(1, (int)Math.Floor(size.Height / GetReaderLineHeight()));
+        PreparePagination();
+        return _pagination.GetPreviousLineStart(endOffset);
     }
 
     private int FindPreviousPageOffset(int endOffset)
     {
-        var target = Math.Clamp(endOffset, 0, _documentText.Length);
-        var lines = GetVisibleLineCount();
-        for (var i = 0; i < lines && target > 0; i++)
-        {
-            target = FindPreviousLineOffset(target);
-        }
-
-        return target;
+        PreparePagination();
+        return _pagination.GetPreviousPageStart(endOffset);
     }
 
     private string GetDocumentLineTitle(int offset)
@@ -832,19 +677,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        try
-        {
-            LoadTextFile(path);
-        }
-        catch (Exception exception)
-        {
-            System.Windows.MessageBox.Show(
-                this,
-                $"打开拖入文件失败：{exception.Message}",
-                "LittleFish",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-        }
+        TryOpenFile(path);
     }
 
     private static bool TryGetDroppedFilePath(WpfDragEventArgs e, out string path)
@@ -968,7 +801,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        var start = Math.Min(Math.Max(_lastFindOffset, _readerOffset) + 1, _documentText.Length);
+        var continuing = _lastFindOffset >= 0 && string.Equals(term, _lastSearchTerm, StringComparison.Ordinal);
+        var start = continuing ? Math.Min(_lastFindOffset + 1, _documentText.Length) : _readerOffset;
         var index = _documentText.IndexOf(term, start, StringComparison.CurrentCultureIgnoreCase);
         if (index < 0)
         {
@@ -977,12 +811,19 @@ public partial class MainWindow : Window
 
         if (index >= 0)
         {
-            _lastFindOffset = index;
             ReaderText.Focus();
             SetReaderOffset(index);
+            _lastFindOffset = index;
+            _lastSearchTerm = term;
             ReaderText.Select(0, Math.Min(term.Length, ReaderText.Text.Length));
             SearchPopup.IsOpen = false;
         }
+    }
+
+    private void ResetSearch()
+    {
+        _lastFindOffset = -1;
+        _lastSearchTerm = "";
     }
 
     private void ProgressJump_Click(object sender, RoutedEventArgs e) => JumpToProgress();
@@ -1080,16 +921,28 @@ public partial class MainWindow : Window
     private void OpenChapterWindow()
     {
         CloseTransientPopups(includeHelp: true);
+        if (_chapterWindow is not null)
+        {
+            _chapterWindow.Show();
+            _chapterWindow.Activate();
+            return;
+        }
 
         var window = new ChapterPickerWindow(_chapters, _readerOffset)
         {
             Owner = this
         };
 
-        if (window.ShowDialog() == true && window.SelectedOffset is int offset)
+        _chapterWindow = window;
+        window.Closed += (_, _) =>
         {
-            JumpToOffset(offset);
-        }
+            _chapterWindow = null;
+            if (window.SelectedOffset is int offset) JumpToOffset(offset);
+            OpenPendingFile();
+            ConfigureAutoPageTimer();
+        };
+        ConfigureAutoPageTimer();
+        window.ShowDialog();
     }
 
     private void Help_Click(object sender, RoutedEventArgs e)
@@ -1151,7 +1004,10 @@ public partial class MainWindow : Window
             }
 
             _settingsWindow = null;
+            OpenPendingFile();
+            ConfigureAutoPageTimer();
         };
+        ConfigureAutoPageTimer();
         window.ShowDialog();
     }
 
@@ -1320,14 +1176,7 @@ public partial class MainWindow : Window
 
         if (_settings.PageTurnByPage)
         {
-            if (forward)
-            {
-                SetReaderOffset(_visibleEndOffset);
-            }
-            else
-            {
-                SetReaderOffset(FindPreviousPageOffset(_readerOffset));
-            }
+            TurnFullPage(forward);
         }
         else
         {
@@ -1339,6 +1188,23 @@ public partial class MainWindow : Window
             {
                 SetReaderOffset(FindPreviousLineOffset(_readerOffset));
             }
+        }
+    }
+
+    private void TurnFullPage(bool forward)
+    {
+        PreparePagination();
+        if (forward)
+        {
+            var end = _pagination.GetPageEnd(_readerOffset);
+            if (end < _documentText.Length)
+            {
+                SetReaderOffset(end);
+            }
+        }
+        else
+        {
+            SetReaderOffset(_pagination.GetPreviousPageStart(_readerOffset));
         }
     }
 
@@ -1424,10 +1290,10 @@ public partial class MainWindow : Window
                 SetReaderOffset(FindPreviousPageOffset(_documentText.Length));
                 return true;
             case Key.PageUp:
-                SetReaderOffset(FindPreviousPageOffset(_readerOffset));
+                TurnFullPage(forward: false);
                 return true;
             case Key.PageDown:
-                SetReaderOffset(_visibleEndOffset);
+                TurnFullPage(forward: true);
                 return true;
             default:
                 return false;
@@ -1526,14 +1392,12 @@ public partial class MainWindow : Window
 
     private void ConfigureAutoPageTimer()
     {
-        _autoPageTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(_settings.AutoPageIntervalSeconds, 1, 3600));
-        if (_settings.AutoPageEnabled)
+        _autoPageTimer.Stop();
+        var seconds = double.IsFinite(_settings.AutoPageIntervalSeconds) ? _settings.AutoPageIntervalSeconds : 5;
+        _autoPageTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 3600));
+        if (CanAutoPage)
         {
             _autoPageTimer.Start();
-        }
-        else
-        {
-            _autoPageTimer.Stop();
         }
         if (AutoPageIcon is not null && AutoPageLabel is not null)
         {
@@ -1543,12 +1407,19 @@ public partial class MainWindow : Window
             AutoPageLabel.Text = _settings.AutoPageEnabled ? "暂停" : "自动";
             AutoPageButton.ToolTip = _settings.AutoPageEnabled ? "暂停自动翻页" : "开启自动翻页";
         }
+        UpdateStatus();
     }
+
+    private bool CanAutoPage => !_isClosing && _settings.AutoPageEnabled && IsVisible
+        && WindowState != WindowState.Minimized && !_isHiddenByBossKey
+        && _modalPauseCount == 0 && _settingsWindow is null && _chapterWindow is null
+        && _resizeDirection == ResizeDirection.None && !string.IsNullOrEmpty(_documentText);
 
     private void AutoPageTimer_Tick(object? sender, EventArgs e)
     {
-        if (string.IsNullOrEmpty(_documentText))
+        if (!CanAutoPage)
         {
+            _autoPageTimer.Stop();
             return;
         }
         TurnPage(forward: true);
@@ -1702,6 +1573,7 @@ public partial class MainWindow : Window
     private void StartWindowResize(ResizeDirection direction, MouseButtonEventArgs e)
     {
         _resizeDirection = direction;
+        ConfigureAutoPageTimer();
         _resizeReadingAnchor = _readerOffset;
         _resizeStart = e.GetPosition(this);
         _resizeStartScreen = PointToScreenDip(_resizeStart.Value);
@@ -1723,6 +1595,7 @@ public partial class MainWindow : Window
         ResizeHint.Visibility = Visibility.Collapsed;
         ReleaseMouseCapture();
         RestoreReadingAnchorAfterLayout(anchor);
+        ConfigureAutoPageTimer();
     }
 
     private void LockReaderLayout()
@@ -1816,6 +1689,7 @@ public partial class MainWindow : Window
     protected override void OnStateChanged(EventArgs e)
     {
         base.OnStateChanged(e);
+        ConfigureAutoPageTimer();
 
         if (WindowState == WindowState.Minimized && _settings.MinimizeToTray)
         {
@@ -1938,7 +1812,8 @@ public partial class MainWindow : Window
         var name = string.IsNullOrWhiteSpace(_filePath) ? "未打开文件" : Path.GetFileName(_filePath);
         FileStatusText.Text = name;
         ProgressStatusText.Text = $"{GetReadingProgressPercent()}%";
-        AutoStatusText.Text = _settings.AutoPageEnabled ? $"自动 {_settings.AutoPageIntervalSeconds:0.#}s" : "自动 关";
+        AutoStatusText.Text = !_settings.AutoPageEnabled ? "自动 关"
+            : !CanAutoPage ? "自动 暂停" : $"自动 {_settings.AutoPageIntervalSeconds:0.#}s";
     }
 
     private int GetReadingProgressPercent()
@@ -2116,8 +1991,8 @@ public partial class MainWindow : Window
 
         CloseTransientPopups(includeHelp: true);
 
-        _settingsWindowWasVisibleBeforeBossKey = _settingsWindow?.IsVisible == true;
         _settingsWindow?.Hide();
+        _chapterWindow?.Hide();
         _isHiddenByBossKey = true;
         HideWindowToTray();
     }
@@ -2125,18 +2000,21 @@ public partial class MainWindow : Window
     private void ShowWindowFromBossKey()
     {
         ShowWindowFromTray();
-        if (_settingsWindowWasVisibleBeforeBossKey && _settingsWindow is not null)
+        if (_settingsWindow is not null)
         {
             _settingsWindow.Show();
             _settingsWindow.Activate();
         }
-        _settingsWindowWasVisibleBeforeBossKey = false;
+        if (_chapterWindow is not null)
+        {
+            _chapterWindow.Show();
+            _chapterWindow.Activate();
+        }
     }
 
     private void ForceShowWindow()
     {
         _isHiddenByBossKey = false;
-        _settingsWindowWasVisibleBeforeBossKey = false;
         _settings.BackgroundOpacity = 1;
         _settings.WindowOpacity = 1;
         _settings.ToolbarVisible = true;
@@ -2288,6 +2166,8 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
+        _isClosing = true;
+        _autoPageTimer.Stop();
         SaveSettings();
         _seaSHostCommandCancellation?.Cancel();
         _seaSHostCommandCancellation?.Dispose();

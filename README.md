@@ -4,7 +4,6 @@
 
 ---------------------------------下面都是GPT写的废话----------------------------------
 
-
 ## 主要功能
 
 ### TXT 阅读
@@ -100,10 +99,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-environment.ps1
 dotnet tool install -g Obfuscar.GlobalTool
 ```
 
-生成 `1.5.2` 安装包：
+生成 `1.6.0` 安装包：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -Version 1.5.2
+powershell -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -Version 1.6.0
 ```
 
 脚本会依次完成：
@@ -118,8 +117,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -Version 
 
 ```text
 dist/setup/
-├── LittleFish_Setup_v1.5.2.exe
-└── LittleFish_Setup_v1.5.2.exe.sha256
+├── LittleFish_Setup_v1.6.0.exe
+└── LittleFish_Setup_v1.6.0.exe.sha256
 ```
 
 仅定位打包兼容性问题时，可以使用 `-SkipObfuscation`；它不应作为正式发布方式。

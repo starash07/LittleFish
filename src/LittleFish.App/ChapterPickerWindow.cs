@@ -292,7 +292,6 @@ public sealed class ChapterPickerWindow : Window
         }
 
         SelectedOffset = entry.Offset;
-        DialogResult = true;
         Close();
     }
 }

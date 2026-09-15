@@ -6,7 +6,7 @@
 
 LittleFish 目前有三个工程：
 
-- `src/LittleFish.App/LittleFish.App.csproj`：LittleFish 主程序，当前版本 `1.5.2`。
+- `src/LittleFish.App/LittleFish.App.csproj`：LittleFish 主程序，当前版本 `1.6.0`。
 - `src/LittleFish.Installer/LittleFish.Installer.csproj`：自定义 WPF 安装器，负责安装和覆盖更新界面。
 - `src/LittleFish.Uninstaller/LittleFish.Uninstaller.csproj`：轻量卸载器，不携带安装 payload，不使用 WPF。
 
@@ -23,7 +23,7 @@ LittleFish 目前有三个工程：
 当前已有成品：
 
 ```text
-dist/setup/LittleFish_Setup_v1.5.2.exe
+dist/setup/LittleFish_Setup_v1.6.0.exe
 ```
 
 当前成品大小约 `142.21 MiB`，并同时生成同名 `.sha256` 校验文件。
@@ -33,13 +33,13 @@ dist/setup/LittleFish_Setup_v1.5.2.exe
 标准命令：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -Version 1.5.2
+powershell -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -Version 1.6.0
 ```
 
 跳过混淆时：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -Version 1.5.2 -SkipObfuscation
+powershell -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -Version 1.6.0 -SkipObfuscation
 ```
 
 脚本按以下顺序执行：

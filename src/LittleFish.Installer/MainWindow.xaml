@@ -347,7 +347,7 @@
                 <Border x:Name="FooterBar" Grid.Row="2" CornerRadius="0,0,28,28" Background="#FFFFFF" BorderBrush="#E3F2FF" BorderThickness="0,1,0,0">
                     <DockPanel Margin="22,0" LastChildFill="False">
                         <TextBlock x:Name="FooterText"
-                                   Text="LittleFish v1.5.2"
+                                   Text="LittleFish v1.6.0"
                                    Foreground="#98A2B3"
                                    VerticalAlignment="Center" />
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
