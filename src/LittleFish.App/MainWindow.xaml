@@ -522,25 +522,32 @@
                     </DockPanel>
                 </Border>
 
-                <TextBox x:Name="ReaderText"
-                         Grid.Row="1"
-                         HorizontalAlignment="Stretch"
-                         VerticalAlignment="Stretch"
-                         IsReadOnly="True"
-                         AcceptsReturn="True"
-                         AcceptsTab="False"
-                         TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Hidden"
-                         HorizontalScrollBarVisibility="Disabled"
-                         BorderThickness="0"
-                         Background="Transparent"
-                         Foreground="#111111"
-                         FontFamily="Microsoft YaHei UI"
-                         FontSize="16"
-                         Padding="20"
-                         SelectionBrush="#B9D7FF"
-                         PreviewKeyDown="ReaderText_PreviewKeyDown"
-                         PreviewMouseLeftButtonDown="ReaderText_PreviewMouseLeftButtonDown" />
+                <Border x:Name="ReaderSurface"
+                        Grid.Row="1"
+                        Background="Transparent"
+                        Focusable="True"
+                        KeyboardNavigation.IsTabStop="False"
+                        PreviewMouseLeftButtonDown="ReaderSurface_PreviewMouseLeftButtonDown">
+                    <TextBox x:Name="ReaderText"
+                             HorizontalAlignment="Stretch"
+                             VerticalAlignment="Stretch"
+                             IsReadOnly="True"
+                             IsHitTestVisible="False"
+                             Focusable="False"
+                             IsTabStop="False"
+                             ContextMenu="{x:Null}"
+                             AcceptsReturn="True"
+                             AcceptsTab="False"
+                             TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Hidden"
+                             HorizontalScrollBarVisibility="Disabled"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             Foreground="#111111"
+                             FontFamily="Microsoft YaHei UI"
+                             FontSize="16"
+                             Padding="20" />
+                </Border>
 
                 <TextBlock x:Name="ResizeHint"
                            Grid.Row="1"
@@ -712,7 +719,7 @@
                     <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">
                         <Run Text="• " />
                         <Run Text="F7" Foreground="#1570EF" FontWeight="SemiBold" />
-                        <Run Text=" 隐藏功能栏；隐藏后，按住正文区域即可拖动窗口，按住窗口边缘即可调整窗口大小。" />
+                        <Run Text=" 显示或隐藏功能栏；按住正文区域即可拖动窗口，按住窗口边缘即可调整窗口大小。" />
                     </TextBlock>
 
                     <TextBlock Margin="0,0,0,7" LineHeight="23" TextWrapping="Wrap" Foreground="#344054">

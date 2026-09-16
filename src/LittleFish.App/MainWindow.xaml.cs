@@ -771,7 +771,7 @@ public partial class MainWindow : Window
 
     private void JumpToOffset(int offset)
     {
-        ReaderText.Focus();
+        ReaderSurface.Focus();
         SetReaderOffset(offset);
     }
 
@@ -811,11 +811,10 @@ public partial class MainWindow : Window
 
         if (index >= 0)
         {
-            ReaderText.Focus();
+            ReaderSurface.Focus();
             SetReaderOffset(index);
             _lastFindOffset = index;
             _lastSearchTerm = term;
-            ReaderText.Select(0, Math.Min(term.Length, ReaderText.Text.Length));
             SearchPopup.IsOpen = false;
         }
     }
@@ -1244,26 +1243,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ReaderText_PreviewKeyDown(object sender, WpfKeyEventArgs e)
-    {
-        if (TryRunFixedShortcut(e))
-        {
-            e.Handled = true;
-            return;
-        }
-
-        if (TryRunShortcut(KeyGestureText.FromKeyEvent(e)))
-        {
-            e.Handled = true;
-            return;
-        }
-
-        if (HandleReaderNavigationKey(e))
-        {
-            e.Handled = true;
-        }
-    }
-
     private bool HandleReaderNavigationKey(WpfKeyEventArgs e)
     {
         if (Keyboard.Modifiers != ModifierKeys.None)
@@ -1449,28 +1428,18 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ReaderText_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void ReaderSurface_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        ReaderSurface.Focus();
+        e.Handled = true;
         var direction = GetResizeDirection(e.GetPosition(this));
         if (direction != ResizeDirection.None)
         {
             StartWindowResize(direction, e);
-            e.Handled = true;
             return;
         }
 
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt) || ShouldDragFromBody(e))
-        {
-            StartWindowMove(e);
-            e.Handled = true;
-        }
-    }
-
-    private bool ShouldDragFromBody(MouseButtonEventArgs e)
-    {
-        return Toolbar.Visibility != Visibility.Visible
-            && e.ChangedButton == MouseButton.Left
-            && GetResizeDirection(e.GetPosition(this)) == ResizeDirection.None;
+        StartWindowMove(e);
     }
 
     private void StartWindowMove(MouseButtonEventArgs e)
@@ -2228,7 +2197,7 @@ public sealed class AppSettings
     public string TextColor { get; set; } = "#111111";
     public string BackgroundColor { get; set; } = "#FFFFFF";
     public double BackgroundOpacity { get; set; } = 1;
-    public double WindowOpacity { get; set; } = 0.96;
+    public double WindowOpacity { get; set; } = 1;
     public double HiddenOpacity { get; set; } = 0.08;
     public bool Topmost { get; set; }
     public bool HoverHide { get; set; }

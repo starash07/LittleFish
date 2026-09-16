@@ -1,6 +1,8 @@
 param(
     [string]$Version = "1.6.0",
     [switch]$SkipObfuscation,
+    [switch]$SkipSmokeTests,
+    [switch]$SkipInstallerHash,
     [switch]$KeepBuildArtifacts
 )
 
@@ -173,9 +175,11 @@ if (-not (Test-Path $builtUninstaller)) {
 $protectedUninstaller = Join-Path $protectedDir "LittleFish_Uninstall.exe"
 Copy-Item -LiteralPath $builtUninstaller -Destination $protectedUninstaller -Force
 
-$smokeExe = Join-Path $protectedDir "LittleFish.exe"
-Invoke-SmokeTest $smokeExe $protectedDir "Protected app"
-Invoke-ExitSmokeTest $protectedUninstaller $protectedDir "Lightweight uninstaller" "--package-smoke-test"
+if (-not $SkipSmokeTests) {
+    $smokeExe = Join-Path $protectedDir "LittleFish.exe"
+    Invoke-SmokeTest $smokeExe $protectedDir "Protected app"
+    Invoke-ExitSmokeTest $protectedUninstaller $protectedDir "Lightweight uninstaller" "--package-smoke-test"
+}
 $settings = Join-Path $protectedDir "settings.json"
 Remove-FileIfExists $settings
 
@@ -202,12 +206,16 @@ if (-not (Test-Path $builtInstaller)) {
     throw "Custom installer was not generated: $builtInstaller"
 }
 
-Invoke-ExitSmokeTest $builtInstaller $installerPublishDir "Single-file installer" "--package-smoke-test"
+if (-not $SkipSmokeTests) {
+    Invoke-ExitSmokeTest $builtInstaller $installerPublishDir "Single-file installer" "--package-smoke-test"
+}
 
 $finalInstaller = Join-Path $setupDir "LittleFish_Setup_v$Version.exe"
 Copy-Item -LiteralPath $builtInstaller -Destination $finalInstaller -Force
-$finalInstallerHash = (Get-FileHash -LiteralPath $finalInstaller -Algorithm SHA256).Hash
-Set-Content -LiteralPath "$finalInstaller.sha256" -Value $finalInstallerHash -Encoding Ascii -NoNewline
+if (-not $SkipInstallerHash) {
+    $finalInstallerHash = (Get-FileHash -LiteralPath $finalInstaller -Algorithm SHA256).Hash
+    Set-Content -LiteralPath "$finalInstaller.sha256" -Value $finalInstallerHash -Encoding Ascii -NoNewline
+}
 
 $uninstallerMiB = (Get-Item -LiteralPath $builtUninstaller).Length / 1MB
 $installedMiB = (Get-ChildItem -LiteralPath $protectedDir -Recurse -File | Measure-Object Length -Sum).Sum / 1MB
@@ -230,7 +238,9 @@ if (-not $KeepBuildArtifacts) {
 }
 
 Write-Host "Installer created: $finalInstaller"
-Write-Host "Installer SHA-256: $finalInstallerHash"
+if (-not $SkipInstallerHash) {
+    Write-Host "Installer SHA-256: $finalInstallerHash"
+}
 Write-Host "Installer size: $([math]::Round($installerMiB, 2)) MiB"
 Write-Host "Installed payload size: $([math]::Round($installedMiB, 2)) MiB"
 Write-Host "Lightweight uninstaller size: $([math]::Round($uninstallerMiB, 2)) MiB"
